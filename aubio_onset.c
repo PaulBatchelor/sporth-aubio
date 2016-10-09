@@ -10,6 +10,7 @@ typedef struct {
     aubio_onset_t *on;
     int count;
     smpl_t is_onset;
+    SPFLOAT tick;
     fvec_t *onset;
 } sporth_aubio_d;
 
@@ -19,6 +20,7 @@ static void init_data(sporth_aubio_d *sad)
     sad->onset = new_fvec(1); 
     sad->count = 0;
     sad->on = new_aubio_onset("default", HOPSIZE, HOPSIZE, 44100);
+    sad->tick = 0;
 }
 
 static void free_data(sporth_aubio_d *sad)
@@ -34,6 +36,7 @@ static void do_stuff(sporth_aubio_d *sad)
     sad->is_onset = fvec_get_sample(sad->onset, 0);
     if(sad->is_onset) {
         fprintf(stderr, "onset!\n");
+        sad->tick = 1;
     }
 }
 
@@ -61,7 +64,8 @@ static int sporth_aubio_onset(plumber_data *pd, sporth_stack *stack, void **ud)
                 do_stuff(sad);
             }
             sad->in->data[sad->count] = sporth_stack_pop_float(stack);
-            sporth_stack_push_float(stack, 0);
+            sporth_stack_push_float(stack, sad->tick);
+            sad->tick = 0;
             sad->count = (sad->count + 1) % HOPSIZE;
             break;
         case PLUMBER_DESTROY:
